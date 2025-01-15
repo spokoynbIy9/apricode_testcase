@@ -13,7 +13,6 @@ export const TaskItem: React.FC<TaskItemProps> = observer(({ task, level }) => {
 
   const handleToggle = () => {
     taskStore.toggleTaskCompletion(task.id);
-    taskStore.updateParentCompletion(task.id);
   };
 
   return (

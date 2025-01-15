@@ -15,10 +15,10 @@ export class TaskStore {
           completed: false,
           subtasks: [
             { id: 4, name: "Subtask 2.1.1", completed: false, subtasks: [] },
-            { id: 5, name: "Subtask 2.1.2", completed: false, subtasks: [] },
+            { id: 5, name: "Subtask 2.1.2", completed: true, subtasks: [] },
           ],
         },
-        { id: 6, name: "Subtask 2.2", completed: false, subtasks: [] },
+        { id: 6, name: "Subtask 2.2", completed: true, subtasks: [] },
       ],
     },
   ];
@@ -28,30 +28,39 @@ export class TaskStore {
   }
 
   toggleTaskCompletion(taskId: number) {
-    const toggle = (tasks: Task[]) => {
-      tasks.forEach((task) => {
-        if (task.id === taskId) {
-          task.completed = !task.completed;
-          task.subtasks.forEach(
-            (subtask) => (subtask.completed = task.completed)
-          );
-        } else {
-          toggle(task.subtasks);
-        }
-      });
+    const findTask = (tasks: Task[]): Task | null => {
+      for (const task of tasks) {
+        if (task.id === taskId) return task;
+        const subtask = findTask(task.subtasks);
+        if (subtask) return subtask;
+      }
+      return null;
     };
-    toggle(this.tasks);
+
+    const toggle = (task: Task, completed: boolean) => {
+      task.completed = completed;
+      task.subtasks.forEach((subtask) => toggle(subtask, completed));
+    };
+
+    const task = findTask(this.tasks);
+    if (task) {
+      toggle(task, !task.completed);
+      this.updateParentCompletion(this.tasks);
+    }
   }
 
-  updateParentCompletion(taskId: number) {
-    const update = (tasks: Task[]) => {
-      tasks.forEach((task) => {
-        if (task.subtasks.some((subtask) => subtask.id === taskId)) {
-          task.completed = task.subtasks.every((subtask) => subtask.completed);
-        }
-        update(task.subtasks);
-      });
+  private updateParentCompletion(tasks: Task[]) {
+    const update = (task: Task) => {
+      if (task.subtasks.length > 0) {
+        task.subtasks.forEach((subtask) => update(subtask));
+
+        const allSubtasksCompleted = task.subtasks.every(
+          (subtask) => subtask.completed
+        );
+        task.completed = allSubtasksCompleted;
+      }
     };
-    update(this.tasks);
+
+    tasks.forEach((task) => update(task));
   }
 }
